@@ -1,0 +1,69 @@
+---
+title: "hw5_"
+author: "Jess Nunez"
+date: "11/19/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+2. Choice 2: Recreate the graph shown below. It shows monthly homicides in Baltimore, with a reference added for the date of the arrest of Freddie Gray and color used to show colder months (November through April) versus warmer months (May through October). There is a smooth line added to help show seasonal and long-term trends in this data.
+
+```{r}
+library(readr)
+library("dplyr")
+library("stringr")
+library("tidyverse")
+library("broom")
+library("lubridate")
+library("tidyr")
+library("ggplot2")
+homicides <- read_csv("~/Documents/2019 R course/r 2019/HW5_V2.csv")
+View(homicides)
+
+df<- homicides %>%
+  unite(city_name, city:state, sep = ",")
+
+blt <- df %>%
+  group_by(city_name) %>%
+  filter(city_name == "Baltimore,MD") %>%
+  mutate(date = ymd(reported_date))
+
+blt_s <- blt %>%
+  separate(date, sep="-", into = c("year", "month", "day")) %>%
+  select(city_name,reported_date, year, month, day) %>%
+  rename(date = reported_date) %>%
+  group_by(month, year) %>%
+  summarise(total_homicides = n()) %>%
+  arrange(year) 
+  #mutate(date = unite(month, year)) 
+
+
+as.numeric(blt_s$total_homicides)
+blt_s %>%
+format(blt_s$month, digits = 2, leading = "drop")
+
+
+# seasons
+season<- blt_s %>%
+  mutate((season = case_when(
+      month %in% c(11,12,1,2,3,4) ~ "Winter",
+      month %in%  c(5,6,7,8,9,10)  ~ "Summer")))
+
+
+# im having trouble with my plot
+blt_plot <- season %>%
+  ggplot(aes(x=month), fill= season) +
+  geom_histogram(aes(y = total_homicides)) + 
+  labs(title = "Homicides in Baltimore, MD", x= "Date", y= "Monthly homicides" ) +
+  geom_smooth() +
+  theme_dark() + 
+geom_vline(xintercept = 04-2019, linetype = "dashed", color = "red")
+
+blt_plot
+
+
+
+```
+
